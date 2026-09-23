@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Validador do catálogo — Comunidade.com</title>
+  <script>try{var t=localStorage.getItem("comunidade-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+  <link rel="icon" href="img/icons/icon-192.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { padding-bottom: 60px; }
+    .vhead { background: var(--navy-900); color: #e8eefc; padding: 22px 0; border-bottom: 4px solid var(--teal); }
+    .vhead h1 { font-family: var(--display); margin: 0; font-size: 1.6rem; text-transform: uppercase; }
+    .vhead h1 span { color: var(--orange); }
+    .vhead p { margin: 4px 0 0; color: #9fb0d6; font-size: .9rem; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-top: 20px; }
+    .panel h2 { margin: 0 0 10px; font-size: 1.05rem; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    textarea {
+      width: 100%; min-height: 160px; font-family: var(--mono); font-size: .8rem; padding: 12px; border-radius: 10px;
+      border: 1.5px solid var(--line); background: var(--field); color: var(--text); resize: vertical; margin: 10px 0;
+    }
+    .status { border-radius: 14px; padding: 16px 18px; font-weight: 600; display: flex; gap: 12px; align-items: center; }
+    .status--ok { background: rgba(34, 197, 94, .14); border: 1px solid rgba(34, 197, 94, .5); }
+    .status--err { background: rgba(248, 113, 113, .14); border: 1px solid rgba(248, 113, 113, .5); }
+    .status--warn { background: rgba(255, 122, 26, .12); border: 1px solid rgba(255, 122, 26, .45); }
+    .status b { font-size: 1.6rem; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 14px; }
+    .stat { background: var(--soft); border-radius: 12px; padding: 10px 12px; }
+    .stat strong { display: block; font-family: var(--display); font-size: 1.5rem; }
+    .stat span { color: var(--muted); font-size: .8rem; }
+    .list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+    .list li { display: grid; grid-template-columns: auto 1fr; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--soft); font-size: .9rem; }
+    .list li .lvl { font-family: var(--mono); font-size: .72rem; font-weight: 700; padding: 2px 7px; border-radius: 6px; height: fit-content; }
+    .lvl--erro { background: var(--bad); color: #fff; }
+    .lvl--aviso { background: var(--orange); color: #fff; }
+    .lvl--info { background: var(--teal); color: #fff; }
+    .list code, .panel code { font-family: var(--mono); font-size: .85em; background: var(--soft-2); padding: 1px 5px; border-radius: 4px; }
+    .list small { color: var(--muted); display: block; margin-top: 2px; }
+    pre.ctx { font-family: var(--mono); font-size: .78rem; background: var(--field); padding: 10px; border-radius: 8px; overflow-x: auto; margin: 6px 0 0; }
+    .muted { color: var(--muted); font-size: .85rem; }
+    .filters-v { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <header class="vhead">
+    <div class="container">
+      <h1>Validador do catálogo · Comunidade<span>.com</span></h1>
+      <p>Confere o <code>data/produtos.json</code> antes de publicar: erros de sintaxe, itens repetidos, categorias, kits, cupons e fotos.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <h2>O que validar?</h2>
+      <div class="row">
+        <button class="btn btn--orange" id="btnSite">Validar data/produtos.json</button>
+        <label class="btn btn--ghost" for="fileIn" style="cursor:pointer">Escolher arquivo .json</label>
+        <input type="file" id="fileIn" accept=".json,application/json" hidden />
+        <label class="toggle"><input type="checkbox" id="chkImgs" checked /> <span>Conferir fotos na pasta img/</span></label>
+      </div>
+      <details style="margin-top:12px">
+        <summary class="muted" style="cursor:pointer">Ou cole o conteúdo do JSON aqui</summary>
+        <textarea id="txt" spellcheck="false" placeholder='{ "loja": { ... }, "produtos": [ ... ] }'></textarea>
+        <button class="btn btn--ghost btn--sm" id="btnTxt">Validar texto colado</button>
+      </details>
+    </section>
+
+    <section id="out"></section>
+  </main>
+
+  <script>
+  (() => {
+    "use strict";
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const EXTS = ["webp", "jpg", "png"];
+    const CONDICOES = ["novo", "usado", "usado testado"];
+    const PESADA = 300 * 1024; // 300 KB
+
+    let res = [];
+    const add = (lvl, msg, dica = "") => res.push({ lvl, msg, dica });
+    const erro = (m, d) => add("erro", m, d), aviso = (m, d) => add("aviso", m, d), info = (m, d) => add("info", m, d);
+
+    // ---------- Sintaxe ----------
+    function parse(texto) {
+      try { return JSON.parse(texto); } catch (e) {
+        let pos = null;
+        const m1 = e.message.match(/position (\d+)/);
+        const m2 = e.message.match(/line (\d+) column (\d+)/);
+        if (m1) pos = Number(m1[1]);
+        const linhas = texto.split("\n");
+        let linha, col;
+        if (m2) { linha = Number(m2[1]); col = Number(m2[2]); }
+        else if (pos != null) {
+          const antes = texto.slice(0, pos).split("\n");
+          linha = antes.length; col = antes[antes.length - 1].length + 1;
+        }
+        let ctx = "";
+        if (linha) {
+          const ini = Math.max(0, linha - 3), fim = Math.min(linhas.length, linha + 1);
+          ctx = linhas.slice(ini, fim).map((l, i) => `${String(ini + i + 1).padStart(4)} │ ${l}`).join("\n");
+        }
+        erro(`O JSON tem um erro de sintaxe${linha ? ` perto da <b>linha ${linha}, coluna ${col}</b>` : ""}.`,
+          `Causas comuns: vírgula sobrando antes de <code>]</code> ou <code>}</code>, vírgula faltando entre itens, aspas não fechadas ou uso de aspas simples.` +
+          (ctx ? `<pre class="ctx">${esc(ctx)}</pre>` : "") + `<br>Mensagem do navegador: <code>${esc(e.message)}</code>`);
+        return null;
+      }
+    }
+
+    const isInt = (v) => Number.isInteger(v);
+    const dataValida = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s + "T00:00:00"));
+    const hoje = () => new Date().toISOString().slice(0, 10);
+
+    // ---------- Regras ----------
+    function validar(d) {
+      if (typeof d !== "object" || Array.isArray(d) || !d) return erro("O arquivo precisa começar com <code>{</code> e ter as chaves <code>loja</code> e <code>produtos</code>.");
+
+      // loja
+      const l = d.loja;
+      if (!l) erro("Falta o bloco <code>loja</code>.");
+      else {
+        const wa = String(l.whatsapp ?? "");
+        if (!wa) erro("<code>loja.whatsapp</code> está vazio — os pedidos não terão para onde ir.");
+        else if (!/^\d+$/.test(wa)) erro(`<code>loja.whatsapp</code> deve ter só números (está <code>${esc(wa)}</code>).`, "Ex.: <code>5592991234567</code> (55 + DDD + número).");
+        else if (!wa.startsWith("55") || wa.length < 12 || wa.length > 13) aviso(`<code>loja.whatsapp</code> (<code>${esc(wa)}</code>) não parece um número brasileiro completo.`, "Formato esperado: 55 + DDD + número, ex.: <code>5592991234567</code>.");
+        if (wa === "5592999999999") aviso("<code>loja.whatsapp</code> ainda é o número de exemplo.");
+        if (!Array.isArray(l.formasPagamento) || !l.formasPagamento.length) aviso("<code>loja.formasPagamento</code> está vazio; o site vai usar Pix/Cartão/Dinheiro.");
+        if (!l.entrega) aviso("<code>loja.entrega</code> está vazio; o texto sobre frete por aplicativo não vai aparecer.");
+      }
+
+      // categorias
+      const cats = Array.isArray(d.categorias) ? d.categorias : [];
+      if (!cats.length) erro("A lista <code>categorias</code> está vazia ou não existe.");
+      const catIds = new Set();
+      cats.forEach((c, i) => {
+        if (!c.id) erro(`Categoria na posição ${i + 1} sem <code>id</code>.`);
+        else if (catIds.has(c.id)) erro(`Categoria <code>${esc(c.id)}</code> repetida.`);
+        else catIds.add(c.id);
+        if (!c.nome) aviso(`Categoria <code>${esc(c.id)}</code> sem <code>nome</code>.`);
+      });
+
+      // produtos
+      const prods = Array.isArray(d.produtos) ? d.produtos : null;
+      if (!prods) return erro("Falta a lista <code>produtos</code>.");
+      if (!prods.length) aviso("A lista de produtos está vazia.");
+      const itens = new Map(), nomes = new Map(), catUsadas = new Set();
+      prods.forEach((p, i) => {
+        const ref = p.item != null ? `item <b>#${esc(p.item)}</b>` : `produto na posição ${i + 1}`;
+        if (p.item == null || p.item === "") erro(`${ref} está sem o campo <code>item</code> (número da foto).`);
+        else if (itens.has(String(p.item))) erro(`O ${ref} está repetido (“${esc(itens.get(String(p.item)).nome)}” e “${esc(p.nome)}”).`, "Cada produto precisa de um número único; ele também define o nome da foto.");
+        else itens.set(String(p.item), p);
+        if (!p.nome) erro(`${ref} está sem <code>nome</code>.`);
+        else {
+          const k = p.nome.trim().toLowerCase();
+          if (nomes.has(k)) aviso(`Nome repetido: “${esc(p.nome)}” (#${esc(nomes.get(k))} e #${esc(p.item)}).`, "Se forem itens diferentes, vale diferenciar no nome (ex.: modelo, cor, versão).");
+          else nomes.set(k, p.item);
+        }
+        if (!p.descricao) aviso(`${ref} está sem <code>descricao</code>.`);
+        if (typeof p.preco !== "number") erro(`${ref}: <code>preco</code> precisa ser número (ex.: <code>49.90</code>), está <code>${esc(JSON.stringify(p.preco))}</code>.`, "Use ponto como separador decimal e sem aspas nem “R$”.");
+        else if (p.preco <= 0) aviso(`${ref}: <code>preco</code> é ${p.preco}.`);
+        else if (Math.abs(Math.round(p.preco * 100) - p.preco * 100) > 1e-6) aviso(`${ref}: <code>preco</code> tem mais de 2 casas decimais (${p.preco}).`);
+        if (!isInt(p.quantidade) || p.quantidade < 0) erro(`${ref}: <code>quantidade</code> precisa ser número inteiro ≥ 0 (está <code>${esc(JSON.stringify(p.quantidade))}</code>).`);
+        if (!p.categoria) erro(`${ref} está sem <code>categoria</code>.`);
+        else if (!catIds.has(p.categoria)) erro(`${ref}: a categoria <code>${esc(p.categoria)}</code> não existe na lista <code>categorias</code>.`, `Categorias válidas: ${[...catIds].map((c) => `<code>${esc(c)}</code>`).join(", ")}`);
+        else catUsadas.add(p.categoria);
+        if (p.condicao && !CONDICOES.includes(String(p.condicao).toLowerCase())) aviso(`${ref}: <code>condicao</code> “${esc(p.condicao)}” não é padrão.`, `Use ${CONDICOES.map((c) => `<code>${c}</code>`).join(", ")}.`);
+        if (p.fotos != null && (!isInt(p.fotos) || p.fotos < 1)) erro(`${ref}: <code>fotos</code> precisa ser inteiro ≥ 1.`);
+        if (p.especificacoes != null && (typeof p.especificacoes !== "object" || Array.isArray(p.especificacoes))) erro(`${ref}: <code>especificacoes</code> deve ser um objeto, ex.: <code>{"Tensão": "5 V"}</code>.`);
+      });
+      cats.forEach((c) => c.id && !catUsadas.has(c.id) && info(`A categoria <code>${esc(c.id)}</code> não tem produtos (não aparece no site).`));
+      const esgotados = prods.filter((p) => p.quantidade === 0).length;
+
+      // kits
+      const kits = Array.isArray(d.kits) ? d.kits : [];
+      const kitIds = new Set();
+      kits.forEach((k, i) => {
+        const ref = k.id ? `Kit <b>${esc(k.id)}</b>` : `Kit na posição ${i + 1}`;
+        if (!k.id) erro(`${ref} sem <code>id</code>.`);
+        else if (!/^[a-z0-9-]+$/.test(k.id)) erro(`${ref}: o <code>id</code> deve ter só letras minúsculas, números e hífen (vira link: <code>#kit-${esc(k.id)}</code>).`);
+        else if (kitIds.has(k.id)) erro(`${ref} repetido.`);
+        else kitIds.add(k.id);
+        if (!k.nome) erro(`${ref} sem <code>nome</code>.`);
+        const dsc = k.desconto ?? 0;
+        if (typeof dsc !== "number" || dsc < 0 || dsc > 90) erro(`${ref}: <code>desconto</code> deve ser número entre 0 e 90 (é porcentagem).`);
+        if (!Array.isArray(k.itens) || !k.itens.length) return erro(`${ref} não tem <code>itens</code>.`);
+        k.itens.forEach((c) => {
+          const p = itens.get(String(c.item));
+          if (!p) erro(`${ref}: o item <code>#${esc(c.item)}</code> não existe nos produtos.`);
+          else if (p.quantidade < (c.qtd || 1)) aviso(`${ref}: “${esc(p.nome)}” (#${esc(c.item)}) não tem estoque suficiente — o kit aparece como indisponível.`);
+          if (!isInt(c.qtd) || c.qtd < 1) erro(`${ref}: <code>qtd</code> do item #${esc(c.item)} deve ser inteiro ≥ 1.`);
+        });
+      });
+
+      // cupons
+      const cupons = Array.isArray(d.cupons) ? d.cupons : [];
+      const codigos = new Set();
+      cupons.forEach((c, i) => {
+        const ref = c.codigo ? `Cupom <b>${esc(c.codigo)}</b>` : `Cupom na posição ${i + 1}`;
+        if (!c.codigo) erro(`${ref} sem <code>codigo</code>.`);
+        else if (codigos.has(c.codigo.toUpperCase())) erro(`${ref} repetido.`);
+        else codigos.add(c.codigo.toUpperCase());
+        if (!["percentual", "valor"].includes(c.tipo)) erro(`${ref}: <code>tipo</code> deve ser <code>percentual</code> ou <code>valor</code>.`);
+        if (typeof c.valor !== "number" || c.valor <= 0) erro(`${ref}: <code>valor</code> deve ser número maior que zero.`);
+        else if (c.tipo === "percentual" && c.valor > 100) erro(`${ref}: percentual acima de 100%.`);
+        if (c.minimo != null && typeof c.minimo !== "number") erro(`${ref}: <code>minimo</code> deve ser número.`);
+        if (c.validade) {
+          if (!dataValida(c.validade)) erro(`${ref}: <code>validade</code> deve estar no formato <code>AAAA-MM-DD</code> (ex.: <code>2026-12-31</code>).`);
+          else if (c.validade < hoje()) aviso(`${ref} expirou em ${c.validade.split("-").reverse().join("/")}.`);
+        }
+      });
+
+      // FAQ / como funciona
+      (d.faq || []).forEach((q, i) => (!q.pergunta || !q.resposta) && aviso(`FAQ na posição ${i + 1} sem <code>pergunta</code> ou <code>resposta</code>.`));
+      (d.comoFunciona || []).forEach((s, i) => (!s.titulo || !s.texto) && aviso(`Passo ${i + 1} de <code>comoFunciona</code> sem <code>titulo</code> ou <code>texto</code>.`));
+
+      return { prods, kits, cupons, esgotados, cats: catUsadas.size };
+    }
+
+    // ---------- Fotos ----------
+    async function existe(url) {
+      try {
+        const r = await fetch(url, { method: "HEAD", cache: "no-store" });
+        if (!r.ok) return null;
+        return Number(r.headers.get("content-length")) || 0;
+      } catch { return null; }
+    }
+    async function achaFoto(base) {
+      for (const ext of EXTS) {
+        const t = await existe(`img/${base}.${ext}`);
+        if (t !== null) return { arquivo: `img/${base}.${ext}`, tamanho: t };
+      }
+      return null;
+    }
+    async function checarFotos(prods, statusEl) {
+      let semFoto = [], pesadas = [], feitas = 0, total = 0;
+      const tarefas = [];
+      prods.forEach((p) => {
+        const n = Number.isInteger(p.fotos) && p.fotos > 0 ? p.fotos : 1;
+        for (let i = 0; i < n; i++) {
+          const base = i === 0 ? String(p.item) : `${p.item}-${i + 1}`;
+          total++;
+          tarefas.push(async () => {
+            const f = p.imagem && i === 0 ? ((await existe(p.imagem)) !== null ? { arquivo: p.imagem, tamanho: 0 } : null) : await achaFoto(base);
+            feitas++;
+            statusEl.textContent = `Conferindo fotos… ${feitas}/${total}`;
+            if (!f) semFoto.push({ p, base, i });
+            else if (f.tamanho > PESADA) pesadas.push({ p, f });
+          });
+        }
+      });
+      // 6 verificações por vez
+      const fila = [...tarefas];
+      await Promise.all(Array.from({ length: 6 }, async () => { while (fila.length) await fila.shift()(); }));
+      statusEl.textContent = "";
+
+      const porItem = (x, y) => (parseFloat(x.p.item) || 0) - (parseFloat(y.p.item) || 0);
+      const principais = semFoto.filter((s) => s.i === 0).sort(porItem);
+      const extras = semFoto.filter((s) => s.i > 0);
+      if (principais.length) aviso(`${principais.length} produto(s) sem foto principal (vão mostrar o chip genérico):`,
+        principais.map((s) => `<code>img/${esc(s.base)}.webp|jpg|png</code> — ${esc(s.p.nome)}`).join("<br>"));
+      extras.forEach((s) => erro(`O item #${esc(s.p.item)} declara <code>"fotos": ${s.p.fotos}</code>, mas falta <code>img/${esc(s.base)}.(webp|jpg|png)</code>.`, "Envie a foto ou diminua o número em <code>fotos</code>."));
+      pesadas.forEach(({ p, f }) => aviso(`Foto pesada: <code>${esc(f.arquivo)}</code> tem ${(f.tamanho / 1024).toFixed(0)} KB (#${esc(p.item)}).`, "Rode <code>python tools/otimizar-imagens.py</code> para gerar versões .webp leves."));
+      const logo = (await existe("img/logo.png")) !== null;
+      if (!logo) info("Sem <code>img/logo.png</code> — o site usa o ícone de chip padrão.");
+      if (!principais.length && !extras.length) info("Todas as fotos declaradas foram encontradas. 📷");
+    }
+
+    // ---------- Relatório ----------
+    function relatorio(stats) {
+      const n = (lvl) => res.filter((r) => r.lvl === lvl).length;
+      const e = n("erro"), a = n("aviso");
+      const status = e
+        ? `<div class="status status--err"><b>✖</b> ${e} erro(s) encontrado(s). Corrija antes de publicar — com erro, o catálogo pode não carregar ou ficar incompleto.</div>`
+        : a
+          ? `<div class="status status--warn"><b>!</b> Nenhum erro. ${a} aviso(s) para revisar (o site funciona, mas vale conferir).</div>`
+          : `<div class="status status--ok"><b>✔</b> Tudo certo! O catálogo está pronto para publicar.</div>`;
+      const st = stats ? `<div class="stats">
+          <div class="stat"><strong>${stats.prods.length}</strong><span>produtos</span></div>
+          <div class="stat"><strong>${stats.cats}</strong><span>categorias com itens</span></div>
+          <div class="stat"><strong>${stats.esgotados}</strong><span>esgotados</span></div>
+          <div class="stat"><strong>${stats.kits.length}</strong><span>kits</span></div>
+          <div class="stat"><strong>${stats.cupons.length}</strong><span>cupons</span></div>
+        </div>` : "";
+      const ordem = { erro: 0, aviso: 1, info: 2 };
+      const lista = res.sort((x, y) => ordem[x.lvl] - ordem[y.lvl])
+        .map((r) => `<li data-lvl="${r.lvl}"><span class="lvl lvl--${r.lvl}">${r.lvl.toUpperCase()}</span><div>${r.msg}${r.dica ? `<small>${r.dica}</small>` : ""}</div></li>`).join("");
+      $("#out").innerHTML = `<div class="panel">${status}${st}<ul class="list">${lista}</ul></div>`;
+    }
+
+    async function rodar(texto, origem) {
+      res = [];
+      $("#out").innerHTML = `<div class="panel"><p class="muted" id="prog">Validando ${esc(origem)}…</p></div>`;
+      const d = parse(texto);
+      if (!d) return relatorio(null);
+      const stats = validar(d);
+      if (stats && $("#chkImgs").checked && location.protocol.startsWith("http")) {
+        await checarFotos(stats.prods, $("#prog"));
+      } else if ($("#chkImgs").checked) {
+        info("As fotos não foram conferidas porque a página foi aberta direto do arquivo (file://). Use o Live Server ou <code>python -m http.server</code>.");
+      }
+      relatorio(stats && stats.prods ? stats : null);
+    }
+
+    $("#btnSite").addEventListener("click", async () => {
+      try {
+        const r = await fetch("data/produtos.json", { cache: "no-store" });
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        rodar(await r.text(), "data/produtos.json");
+      } catch (e) {
+        res = [];
+        erro(`Não consegui abrir <code>data/produtos.json</code> (${esc(e.message)}).`, "Se abriu esta página com dois cliques (file://), rode um servidor local, ou use “Escolher arquivo .json”.");
+        relatorio(null);
+      }
+    });
+    $("#fileIn").addEventListener("change", async (e) => {
+      const f = e.target.files[0];
+      if (f) rodar(await f.text(), f.name);
+      e.target.value = "";
+    });
+    $("#btnTxt").addEventListener("click", () => rodar($("#txt").value, "texto colado"));
+
+    if (location.protocol.startsWith("http")) $("#btnSite").click();
+  })();
+  </script>
+</body>
+</html>

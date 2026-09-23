@@ -1,0 +1,112 @@
+{
+  "loja": {
+    "nome": "Comunidade.com",
+    "slogan": "Componentes para TCC",
+    "whatsapp": "5592988439331",
+    "cidade": "Manaus - AM",
+    "instagram": "",
+    "mensagemVenderDoar": "Olá! Tenho componentes que gostaria de vender/doar para a Comunidade.",
+    "formasPagamento": ["Pix", "Cartão de crédito", "Cartão de débito", "Dinheiro"],
+    "entrega": "Entregamos somente por aplicativo de entrega (Uber Flash, 99 Entrega ou similar). O frete é calculado pela distância e pago pelo cliente.",
+    "orcamentoValidadeDias": 7
+  },
+
+  "cupons": [
+    {"codigo": "TCC10", "tipo": "percentual", "valor": 10, "minimo": 50, "validade": "2026-12-31", "descricao": "10% off em compras acima de R$ 50"},
+    {"codigo": "BEMVINDO", "tipo": "valor", "valor": 5, "minimo": 30, "validade": "2026-12-31", "descricao": "R$ 5 off na primeira compra"}
+  ],
+
+  "kits": [
+    {
+      "id": "iot-esp32",
+      "nome": "Kit IoT com ESP32",
+      "descricao": "Tudo para o seu primeiro projeto conectado: controle cargas pelo Wi-Fi e veja as leituras na tela.",
+      "desconto": 10,
+      "itens": [{"item": 26, "qtd": 1}, {"item": 4, "qtd": 1}, {"item": 33, "qtd": 1}, {"item": 15, "qtd": 1}]
+    },
+    {
+      "id": "robotica",
+      "nome": "Kit Robótica com Arduino",
+      "descricao": "Base para braço robótico ou carrinho: Arduino, ponte H, servos e alimentação por bateria.",
+      "desconto": 10,
+      "itens": [{"item": 29, "qtd": 1}, {"item": 31, "qtd": 1}, {"item": 21, "qtd": 2}, {"item": 23, "qtd": 1}]
+    },
+    {
+      "id": "automacao",
+      "nome": "Kit Automação Residencial",
+      "descricao": "Controle de acesso com RFID e senha, display LCD e relés para acionar lâmpadas e fechaduras.",
+      "desconto": 12,
+      "itens": [{"item": 29, "qtd": 1}, {"item": 34, "qtd": 1}, {"item": 13, "qtd": 1}, {"item": 12, "qtd": 1}, {"item": 37, "qtd": 1}]
+    }
+  ],
+
+  "comoFunciona": [
+    {"titulo": "Escolha os componentes", "texto": "Monte seu carrinho com peças avulsas ou kits prontos para o seu projeto."},
+    {"titulo": "Peça pelo WhatsApp", "texto": "Finalize o pedido e ele chega pronto no nosso WhatsApp. Confirmamos o estoque na hora."},
+    {"titulo": "Pague como preferir", "texto": "Pix, cartão ou dinheiro. Se tiver cupom, o desconto já vem calculado."},
+    {"titulo": "Receba por aplicativo", "texto": "Enviamos por Uber Flash, 99 Entrega ou similar. O frete é pago pelo cliente, conforme a distância."}
+  ],
+
+  "faq": [
+    {"pergunta": "Como funciona a entrega?", "resposta": "Entregamos somente por aplicativo de entrega (Uber Flash, 99 Entrega ou similar). Depois que o pedido é confirmado, chamamos o entregador até o endereço informado."},
+    {"pergunta": "Quanto custa o frete?", "resposta": "O valor é calculado pelo próprio aplicativo, de acordo com a distância, e é pago pelo cliente. Informamos o valor no WhatsApp antes do envio."},
+    {"pergunta": "Posso retirar pessoalmente?", "resposta": "No momento não. Todas as entregas são feitas por aplicativo."},
+    {"pergunta": "Quais formas de pagamento vocês aceitam?", "resposta": "Pix, cartão de crédito, cartão de débito e dinheiro."},
+    {"pergunta": "Como uso um cupom de desconto?", "resposta": "Abra o carrinho, digite o código no campo Cupom e toque em Aplicar. O desconto aparece no total e segue junto com o pedido."},
+    {"pergunta": "Os componentes usados são testados?", "resposta": "Sim. Todo item marcado como usado é testado antes de ir para a loja."},
+    {"pergunta": "Quero vender ou doar componentes. Como faço?", "resposta": "Toque em Vender/Doar no topo do site e mande uma mensagem com a lista das peças."}
+  ],
+
+  "categorias": [
+    {"id": "microcontroladores", "nome": "Microcontroladores"},
+    {"id": "sensores", "nome": "Sensores"},
+    {"id": "comunicacao", "nome": "Comunicação"},
+    {"id": "motores", "nome": "Motores e Servos"},
+    {"id": "drivers", "nome": "Drivers e Relés"},
+    {"id": "displays", "nome": "Displays e Entrada"},
+    {"id": "fontes", "nome": "Fontes e Energia"},
+    {"id": "acessorios", "nome": "Acessórios"},
+    {"id": "kits", "nome": "Kits"}
+  ],
+
+  "produtos": [
+    {"item": 1, "nome": "Kit Seguidor de Linha", "descricao": "Kit completo para montar um robô seguidor de linha: chassi, motores, rodas e sensores.", "categoria": "kits", "preco": 89.90, "quantidade": 1, "condicao": "usado"},
+    {"item": 2, "nome": "Sensor de pH", "descricao": "Módulo com sonda para medir o pH de soluções. Ideal para projetos de hidroponia e aquários.", "categoria": "sensores", "preco": 79.90, "quantidade": 1, "condicao": "novo"},
+    {"item": 3, "nome": "Sensor de Qualidade da Água", "descricao": "Sensor TDS para medir sólidos dissolvidos na água. Saída analógica compatível com Arduino e ESP32.", "categoria": "sensores", "preco": 49.90, "quantidade": 1, "condicao": "novo"},
+    {"item": 4, "nome": "Adaptador Terminal ESP32 30 Pinos", "descricao": "Base com bornes parafusáveis para ESP32 de 30 pinos. Conexões firmes, sem solda.", "categoria": "acessorios", "preco": 19.90, "quantidade": 13, "condicao": "novo"},
+    {"item": 5, "nome": "Placa de Expansão ESP32", "descricao": "Shield de expansão com barramentos de VCC/GND para cada pino do ESP32.", "categoria": "acessorios", "preco": 24.90, "quantidade": 3, "condicao": "novo"},
+    {"item": 6, "nome": "Motor Redutor 24V Alto Torque MB03024 30RPM", "descricao": "Motor DC com caixa de redução, 24V, 30 RPM e alto torque. Para esteiras, portões e robôs pesados.", "categoria": "motores", "preco": 129.90, "quantidade": 2, "condicao": "novo"},
+    {"item": 7, "nome": "Fonte Chaveada 24VDC 15A", "descricao": "Fonte colmeia 24V 15A (360W) para automação e motores.", "categoria": "fontes", "preco": 119.90, "quantidade": 2, "condicao": "novo"},
+    {"item": 8, "nome": "Fonte Chaveada 24VDC 10A", "descricao": "Fonte colmeia 24V 10A (240W) com ajuste fino de tensão.", "categoria": "fontes", "preco": 89.90, "quantidade": 1, "condicao": "novo"},
+    {"item": 9, "nome": "Fonte Chaveada 24VDC 1.5A", "descricao": "Fonte compacta 24V 1.5A para pequenos circuitos e CLPs.", "categoria": "fontes", "preco": 39.90, "quantidade": 1, "condicao": "novo"},
+    {"item": 38, "nome": "Fonte Chaveada 12VDC 10A", "descricao": "Fonte colmeia 12V 10A (120W) para fitas de LED, motores e projetos gerais.", "categoria": "fontes", "preco": 59.90, "quantidade": 1, "condicao": "usado"},
+    {"item": 10, "nome": "Fonte Chaveada 12VDC 30A", "descricao": "Fonte colmeia 12V 30A (360W) para cargas de alta potência.", "categoria": "fontes", "preco": 109.90, "quantidade": 1, "condicao": "novo"},
+    {"item": 11, "nome": "Fonte Chaveada 12VDC 5A", "descricao": "Fonte 12V 5A (60W) para projetos de bancada.", "categoria": "fontes", "preco": 39.90, "quantidade": 2, "condicao": "novo"},
+    {"item": 12, "nome": "Teclado Matricial 4x4", "descricao": "Teclado de membrana com 16 teclas para senhas, menus e controle de sistemas.", "categoria": "displays", "preco": 9.90, "quantidade": 2, "condicao": "novo"},
+    {"item": 13, "nome": "Módulo RFID", "descricao": "Leitor RFID RC522 13,56 MHz com cartão e chaveiro. Controle de acesso e identificação.", "categoria": "comunicacao", "preco": 19.90, "quantidade": 5, "condicao": "novo"},
+    {"item": 14, "nome": "Módulo ESP01", "descricao": "Módulo Wi-Fi ESP8266 ESP-01 para conectar seu projeto à internet.", "categoria": "comunicacao", "preco": 14.90, "quantidade": 11, "condicao": "novo"},
+    {"item": 15, "nome": "Display OLED I2C 1\"", "descricao": "Tela OLED monocromática com comunicação I2C. Nítida, compacta e de baixo consumo.", "categoria": "displays", "preco": 22.90, "quantidade": 2, "condicao": "novo"},
+    {"item": 16, "nome": "Fonte Ajustável com Display", "descricao": "Módulo regulador step-down ajustável com display de tensão.", "categoria": "fontes", "preco": 29.90, "quantidade": 3, "condicao": "novo"},
+    {"item": 17, "nome": "Mini Protoboard", "descricao": "Protoboard compacta de 170 pontos para montagens rápidas.", "categoria": "acessorios", "preco": 5.90, "quantidade": 5, "condicao": "novo"},
+    {"item": 18, "nome": "Módulo Conversor USB para Serial FTDI", "descricao": "Conversor USB-TTL FTDI 3.3V/5V para gravar ESP01, Arduino Pro Mini e afins.", "categoria": "comunicacao", "preco": 24.90, "quantidade": 15, "condicao": "novo"},
+    {"item": 19, "nome": "Motor de Passo BYJ-48 5V com Driver", "descricao": "Motor de passo 28BYJ-48 5V acompanhado do driver ULN2003.", "categoria": "motores", "preco": 16.90, "quantidade": 15, "condicao": "novo"},
+    {"item": 20, "nome": "Módulo de Alimentação para Protoboard 3.3V/5V", "descricao": "Encaixa na protoboard e fornece 3.3V e 5V selecionáveis por jumper.", "categoria": "fontes", "preco": 9.90, "quantidade": 16, "condicao": "novo"},
+    {"item": 21, "nome": "Microservo SG90", "descricao": "Servo motor 9g, 180°. Leve e ideal para braços robóticos e mecanismos pequenos.", "categoria": "motores", "preco": 12.90, "quantidade": 15, "condicao": "novo"},
+    {"item": 22, "nome": "Servo MG996 / MG995", "descricao": "Servo com engrenagens metálicas e alto torque para aplicações robustas.", "categoria": "motores", "preco": 34.90, "quantidade": 14, "condicao": "novo"},
+    {"item": 23, "nome": "Case 3x Bateria 18650", "descricao": "Suporte para 3 baterias 18650 em série (até 12,6V). Baterias não inclusas.", "categoria": "fontes", "preco": 9.90, "quantidade": 8, "condicao": "novo"},
+    {"item": 24, "nome": "Módulo Bluetooth", "descricao": "Módulo Bluetooth HC-05/HC-06 para comunicação serial sem fio com celular.", "categoria": "comunicacao", "preco": 29.90, "quantidade": 6, "condicao": "novo"},
+    {"item": 25, "nome": "Kit Seguidor de Linha", "descricao": "Kit para robô seguidor de linha com chassi acrílico, motores com redução e sensores IR.", "categoria": "kits", "preco": 89.90, "quantidade": 2, "condicao": "novo"},
+    {"item": 26, "nome": "ESP32", "descricao": "Microcontrolador dual-core com Wi-Fi e Bluetooth integrados. O queridinho da IoT.", "categoria": "microcontroladores", "preco": 44.90, "quantidade": 7, "condicao": "novo", "fotos": 2, "especificacoes": {"Chip": "ESP32-WROOM-32 (dual-core 240 MHz)", "Conectividade": "Wi-Fi 2.4 GHz + Bluetooth 4.2/BLE", "Pinos": "30 (versão DevKit V1)", "Tensão lógica": "3,3 V", "Alimentação": "5 V via USB"}},
+    {"item": 27, "nome": "ESP8266", "descricao": "Placa NodeMCU ESP8266 com Wi-Fi, programável pela IDE do Arduino.", "categoria": "microcontroladores", "preco": 29.90, "quantidade": 1, "condicao": "novo"},
+    {"item": 28, "nome": "Arduino Due", "descricao": "Placa ARM Cortex-M3 32 bits de 84 MHz, 54 pinos digitais. Potência para projetos exigentes.", "categoria": "microcontroladores", "preco": 149.90, "quantidade": 4, "condicao": "novo"},
+    {"item": 29, "nome": "Arduino Uno", "descricao": "A placa clássica para começar em eletrônica. ATmega328P com cabo USB.", "categoria": "microcontroladores", "preco": 49.90, "quantidade": 16, "condicao": "novo", "fotos": 2, "especificacoes": {"Microcontrolador": "ATmega328P", "Tensão de operação": "5 V", "Pinos digitais": "14 (6 PWM)", "Entradas analógicas": "6", "Acompanha": "Cabo USB"}},
+    {"item": 30, "nome": "Motor Shield", "descricao": "Shield L293D para Arduino: controla até 4 motores DC ou 2 motores de passo.", "categoria": "drivers", "preco": 24.90, "quantidade": 19, "condicao": "novo"},
+    {"item": 31, "nome": "Ponte H L298N", "descricao": "Driver duplo para motores DC de até 2A por canal. Controle de velocidade e sentido.", "categoria": "drivers", "preco": 19.90, "quantidade": 12, "condicao": "novo", "especificacoes": {"Driver": "L298N", "Tensão dos motores": "5 a 35 V", "Corrente": "até 2 A por canal", "Canais": "2 motores DC ou 1 de passo"}},
+    {"item": 32, "nome": "Módulo Relé 1 Canal", "descricao": "Relé 5V para acionar cargas AC/DC com o microcontrolador.", "categoria": "drivers", "preco": 8.90, "quantidade": 5, "condicao": "novo"},
+    {"item": 33, "nome": "Módulo Relé 2 Canais", "descricao": "Dois relés 5V com optoacoplador para automação residencial.", "categoria": "drivers", "preco": 14.90, "quantidade": 14, "condicao": "novo"},
+    {"item": 34, "nome": "Módulo Relé 4 Canais", "descricao": "Quatro relés 5V com optoacoplador. Acione várias cargas de uma vez.", "categoria": "drivers", "preco": 24.90, "quantidade": 2, "condicao": "novo"},
+    {"item": 35, "nome": "Ponte H IBT-2", "descricao": "Driver BTS7960 de alta corrente (até 43A) para motores DC potentes.", "categoria": "drivers", "preco": 59.90, "quantidade": 4, "condicao": "novo"},
+    {"item": 36, "nome": "Display Touch", "descricao": "Display TFT colorido com tela sensível ao toque para interfaces gráficas.", "categoria": "displays", "preco": 69.90, "quantidade": 3, "condicao": "novo"},
+    {"item": 37, "nome": "Display LCD", "descricao": "LCD 16x2 com backlight. Exiba leituras de sensores e mensagens.", "categoria": "displays", "preco": 19.90, "quantidade": 6, "condicao": "novo"}
+  ]
+}
