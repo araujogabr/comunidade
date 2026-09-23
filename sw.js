@@ -6,7 +6,7 @@
    Ao mudar arquivos do site NÃO é preciso mexer aqui. Só aumente a
    VERSAO se quiser forçar a limpeza do cache de todos os visitantes.
    ========================================================= */
-const VERSAO = "v1";
+const VERSAO = "v5";
 const CACHE = `comunidade-${VERSAO}`;
 const ESSENCIAIS = [
   "./",
@@ -15,8 +15,11 @@ const ESSENCIAIS = [
   "js/app.js",
   "data/produtos.json",
   "manifest.webmanifest",
+  "favicon.ico",
+  "img/icons/favicon-32.png",
   "img/icons/icon-192.png",
   "img/icons/icon-512.png",
+  "img/abertura.jpg",
 ];
 
 self.addEventListener("install", (e) => {

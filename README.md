@@ -34,8 +34,27 @@ Validador: http://localhost:5500/validar.html
 | `img/29-2.webp`, `img/29-3.webp`… | fotos extras (declare `"fotos": 3` no produto) |
 | `img/logo.png` | logo do topo |
 | `img/banner.jpg` | imagem do banner (opcional) |
+| `img/abertura.jpg` | imagem da animação de abertura (hacker) |
 
 O site procura **.webp → .jpg → .png**. Sem foto, aparece um chip com o número do item.
+
+### Fotos por link (campo `imagens`)
+
+Em vez de arquivos na pasta `img/`, o produto pode trazer os links das fotos:
+
+```json
+{ "item": 29, "nome": "Arduino Uno", ...,
+  "imagens": [
+    "https://exemplo.com/arduino-frente.jpg",
+    "https://exemplo.com/arduino-verso.jpg"
+  ] }
+```
+
+- A **primeira** imagem aparece no card; todas aparecem no slider ao abrir o produto.
+- Com um link só, também pode escrever `"imagens": "https://..."`.
+- Links de compartilhamento do **Google Drive**, **Dropbox** e **GitHub** são convertidos automaticamente (no Drive, o arquivo precisa estar como “Qualquer pessoa com o link”).
+- Prefira `https://`. Se um link falhar, o site tenta a foto local `img/29.webp` e, por último, mostra o chip com o número.
+- Produto sem `imagens` continua usando as fotos da pasta `img/` e o campo `fotos`.
 
 ### Otimizar as fotos
 

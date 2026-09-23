@@ -6,7 +6,9 @@
   <meta name="robots" content="noindex" />
   <title>Validador do catálogo — Comunidade.com</title>
   <script>try{var t=localStorage.getItem("comunidade-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
-  <link rel="icon" href="img/icons/icon-192.png" type="image/png" />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="icon" href="img/icons/favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="icon" href="img/icons/icon-192.png" sizes="192x192" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -170,6 +172,16 @@
         else catUsadas.add(p.categoria);
         if (p.condicao && !CONDICOES.includes(String(p.condicao).toLowerCase())) aviso(`${ref}: <code>condicao</code> “${esc(p.condicao)}” não é padrão.`, `Use ${CONDICOES.map((c) => `<code>${c}</code>`).join(", ")}.`);
         if (p.fotos != null && (!isInt(p.fotos) || p.fotos < 1)) erro(`${ref}: <code>fotos</code> precisa ser inteiro ≥ 1.`);
+        if (p.imagens != null) {
+          const lista = Array.isArray(p.imagens) ? p.imagens : [p.imagens];
+          if (!lista.length) aviso(`${ref}: <code>imagens</code> está vazio — o site usa as fotos da pasta img/.`);
+          lista.forEach((u, k) => {
+            if (typeof u !== "string" || !u.trim()) erro(`${ref}: o link ${k + 1} de <code>imagens</code> precisa ser um texto entre aspas.`);
+            else if (/^http:\/\//i.test(u)) aviso(`${ref}: o link ${k + 1} usa <code>http://</code>. No GitHub Pages (https) ele pode ser bloqueado — prefira <code>https://</code>.`);
+            else if (/\s/.test(u.trim())) erro(`${ref}: o link ${k + 1} tem espaços: <code>${esc(u)}</code>.`);
+          });
+          if (p.fotos != null) info(`${ref} tem <code>imagens</code> e <code>fotos</code>; o site usa os links de <code>imagens</code> e ignora <code>fotos</code>.`);
+        }
         if (p.especificacoes != null && (typeof p.especificacoes !== "object" || Array.isArray(p.especificacoes))) erro(`${ref}: <code>especificacoes</code> deve ser um objeto, ex.: <code>{"Tensão": "5 V"}</code>.`);
       });
       cats.forEach((c) => c.id && !catUsadas.has(c.id) && info(`A categoria <code>${esc(c.id)}</code> não tem produtos (não aparece no site).`));
@@ -236,10 +248,43 @@
       }
       return null;
     }
+    function normalizarUrl(url) {
+      const u = String(url || "").trim();
+      let m = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]+)/);
+      if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1200`;
+      if (/dropbox\.com\//.test(u)) return u.replace(/[?&]dl=0/, "").replace(/(\?|$)/, (x) => (x === "?" ? "?raw=1&" : "?raw=1")).replace(/&$/, "");
+      m = u.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
+      if (m) return `https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3]}`;
+      return u;
+    }
+    function carregaImagem(url, ms = 10000) {
+      return new Promise((ok) => {
+        const img = new Image();
+        const t = setTimeout(() => { img.src = ""; ok(false); }, ms);
+        img.referrerPolicy = "no-referrer";
+        img.onload = () => { clearTimeout(t); ok(img.naturalWidth > 0); };
+        img.onerror = () => { clearTimeout(t); ok(false); };
+        img.src = url;
+      });
+    }
     async function checarFotos(prods, statusEl) {
       let semFoto = [], pesadas = [], feitas = 0, total = 0;
       const tarefas = [];
+      const linksRuins = [];
       prods.forEach((p) => {
+        const links = (Array.isArray(p.imagens) ? p.imagens : p.imagens ? [p.imagens] : []).filter((u) => typeof u === "string" && u.trim());
+        if (links.length) {
+          links.forEach((u, k) => {
+            total++;
+            tarefas.push(async () => {
+              const ok = await carregaImagem(normalizarUrl(u));
+              feitas++;
+              statusEl.textContent = `Conferindo fotos… ${feitas}/${total}`;
+              if (!ok) linksRuins.push({ p, u, k });
+            });
+          });
+          return; // produto usa links: não procura arquivos na pasta img/
+        }
         const n = Number.isInteger(p.fotos) && p.fotos > 0 ? p.fotos : 1;
         for (let i = 0; i < n; i++) {
           const base = i === 0 ? String(p.item) : `${p.item}-${i + 1}`;
@@ -265,9 +310,11 @@
         principais.map((s) => `<code>img/${esc(s.base)}.webp|jpg|png</code> — ${esc(s.p.nome)}`).join("<br>"));
       extras.forEach((s) => erro(`O item #${esc(s.p.item)} declara <code>"fotos": ${s.p.fotos}</code>, mas falta <code>img/${esc(s.base)}.(webp|jpg|png)</code>.`, "Envie a foto ou diminua o número em <code>fotos</code>."));
       pesadas.forEach(({ p, f }) => aviso(`Foto pesada: <code>${esc(f.arquivo)}</code> tem ${(f.tamanho / 1024).toFixed(0)} KB (#${esc(p.item)}).`, "Rode <code>python tools/otimizar-imagens.py</code> para gerar versões .webp leves."));
+      linksRuins.sort(porItem).forEach(({ p, u, k }) => erro(`O link ${k + 1} de imagens do item #${esc(p.item)} (${esc(p.nome)}) não abriu uma imagem:<br><code>${esc(u)}</code>`,
+        "Confira se o link abre a imagem direto no navegador (não uma página) e se o arquivo está público. Links do Google Drive precisam estar como “Qualquer pessoa com o link”."));
       const logo = (await existe("img/logo.png")) !== null;
       if (!logo) info("Sem <code>img/logo.png</code> — o site usa o ícone de chip padrão.");
-      if (!principais.length && !extras.length) info("Todas as fotos declaradas foram encontradas. 📷");
+      if (!principais.length && !extras.length && !linksRuins.length) info("Todas as fotos declaradas foram encontradas. 📷");
     }
 
     // ---------- Relatório ----------

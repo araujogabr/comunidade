@@ -101,12 +101,12 @@
   // =========================================================
   function placeholder(label) {
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'>
-      <rect width='400' height='300' fill='#eef3fb'/>
-      <g fill='none' stroke='#13a4ad' stroke-width='4' opacity='.55'>
+      <rect width='400' height='300' fill='#f1f1f1'/>
+      <g fill='none' stroke='#5dd62c' stroke-width='4' opacity='.6'>
         <path d='M0 90h120l30 30h40M0 210h110l30-30h50M400 90H280l-30 30h-40M400 210H290l-30-30h-50'/>
       </g>
-      <rect x='150' y='95' width='100' height='110' rx='12' fill='#0f2556'/>
-      <g fill='#9fb0d6'>${[0, 1, 2, 3].map((i) => `<rect x='${160 + i * 22}' y='82' width='8' height='13'/><rect x='${160 + i * 22}' y='205' width='8' height='13'/>`).join("")}</g>
+      <rect x='150' y='95' width='100' height='110' rx='12' fill='#202020'/>
+      <g fill='#9a9a9a'>${[0, 1, 2, 3].map((i) => `<rect x='${160 + i * 22}' y='82' width='8' height='13'/><rect x='${160 + i * 22}' y='205' width='8' height='13'/>`).join("")}</g>
       <text x='200' y='158' font-family='monospace' font-size='24' font-weight='700' fill='#fff' text-anchor='middle'>${esc(label)}</text>
     </svg>`;
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
@@ -114,7 +114,7 @@
   // base: "29" (foto 1) ou "29-2" (foto 2)
   function imgTag({ base, alt = "", cls = "", custom = "", label = "", eager = false }) {
     const src = custom || `${IMG_DIR}${base}.${IMG_EXTS[0]}`;
-    return `<img class="${cls}" src="${esc(src)}" alt="${esc(alt)}" ${eager ? "" : 'loading="lazy"'} decoding="async"
+    return `<img class="${cls}" src="${esc(src)}" alt="${esc(alt)}" ${eager ? "" : 'loading="lazy"'} decoding="async" referrerpolicy="no-referrer"
       data-base="${esc(base)}" data-label="${esc(label || "#" + base)}" data-try="${custom ? -1 : 0}"
       onerror="window.__comunidadeImg(this)" />`;
   }
@@ -132,10 +132,68 @@
       img.src = placeholder(img.dataset.label);
     }
   };
+  // ---- fotos vindas de links (campo "imagens" no produtos.json) ----
+  // Aceita links diretos e corrige automaticamente links de compartilhamento
+  // do Google Drive, Dropbox e GitHub para o endereço da imagem em si.
+  function normalizarUrl(url) {
+    const u = String(url || "").trim();
+    let m = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]+)/);
+    if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1200`;
+    if (/dropbox\.com\//.test(u)) return u.replace(/[?&]dl=0/, "").replace(/(\?|$)/, (x) => (x === "?" ? "?raw=1&" : "?raw=1")).replace(/&$/, "");
+    m = u.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)$/);
+    if (m) return `https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3]}`;
+    return u;
+  }
+  // lista de links do produto (vazia = usa as fotos locais img/29.webp, img/29-2.webp…)
+  function linksFotos(p) {
+    if (p._links) return p._links;
+    let lista = Array.isArray(p.imagens) ? p.imagens : p.imagens ? [p.imagens] : p.imagem ? [p.imagem] : [];
+    p._links = lista.filter((x) => typeof x === "string" && x.trim()).map(normalizarUrl);
+    return p._links;
+  }
   const fotoBase = (p, i) => (i === 0 ? String(p.item) : `${p.item}-${i + 1}`);
-  const totalFotos = (p) => Math.max(1, parseInt(p.fotos, 10) || 1);
+  const totalFotos = (p) => linksFotos(p).length || Math.max(1, parseInt(p.fotos, 10) || 1);
   const produtoImg = (p, cls = "", i = 0, eager = false) =>
-    imgTag({ base: fotoBase(p, i), alt: p.nome, cls, custom: i === 0 ? p.imagem : "", label: `#${p.item}`, eager });
+    imgTag({ base: fotoBase(p, i), alt: p.nome, cls, custom: linksFotos(p)[i] || "", label: `#${p.item}`, eager });
+
+  // chuva de caracteres estilo "Matrix" (fundo da abertura)
+  function chuvaDigital(canvas) {
+    if (!canvas) return () => {};
+    const ctx = canvas.getContext("2d");
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const TAM = 15;
+    const CHARS = "01アイウエオカキクケコ0123456789ABCDEF<>/{}#$".split("");
+    let colunas, gotas, w, h, rodando = true, ultimo = 0;
+    function medir() {
+      w = canvas.clientWidth; h = canvas.clientHeight;
+      canvas.width = w * dpr; canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      colunas = Math.ceil(w / TAM);
+      gotas = Array.from({ length: colunas }, () => Math.random() * -h / TAM);
+      ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, w, h);
+    }
+    medir();
+    window.addEventListener("resize", medir);
+    function quadro(t) {
+      if (!rodando) return;
+      requestAnimationFrame(quadro);
+      if (t - ultimo < 45) return; // ~22 fps é suficiente e leve
+      ultimo = t;
+      ctx.fillStyle = "rgba(5, 5, 5, .14)";
+      ctx.fillRect(0, 0, w, h);
+      ctx.font = `600 ${TAM - 2}px "JetBrains Mono", monospace`;
+      for (let i = 0; i < colunas; i++) {
+        const y = gotas[i] * TAM;
+        const ch = CHARS[(Math.random() * CHARS.length) | 0];
+        ctx.fillStyle = Math.random() > .96 ? "#f8f8f8" : (Math.random() > .5 ? "#5dd62c" : "#337418");
+        ctx.fillText(ch, i * TAM, y);
+        if (y > h && Math.random() > .975) gotas[i] = 0;
+        gotas[i] += 1;
+      }
+    }
+    requestAnimationFrame(quadro);
+    return () => { rodando = false; window.removeEventListener("resize", medir); };
+  }
 
   // =========================================================
   // LOADER — boot de "sistema embarcado" (máx. 3s)
@@ -145,17 +203,18 @@
     const logEl = $("#loaderLog");
     const bar = $("#loaderBar");
     const linhas = [
-      ["BOOT", "Inicializando MCU Comunidade..."],
-      ["GPIO", "Configurando pinos"],
+      ["SYS ", "Inicializando terminal..."],
+      ["NET ", "Conectando à comunidade..."],
       ["I2C ", "Sensores detectados: 0x3C 0x68"],
       ["PWM ", "Atuadores calibrados"],
-      ["WiFi", "Conectando à comunidade..."],
+      ["AUTH", "Acesso liberado"],
       ["HTTP", "Carregando catálogo"],
-      ["OK  ", "Sistema pronto!"],
+      ["OK  ", "Bem-vindo à Comunidade.com"],
     ];
     let i = 0, finished = false, dataReady = false;
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const minTime = reduced ? 400 : LOADER_MIN;
+    const pararChuva = reduced ? () => {} : chuvaDigital($("#loaderRain"));
 
     const logTimer = setInterval(() => {
       if (i >= linhas.length) return clearInterval(logTimer);
@@ -181,6 +240,7 @@
       clearInterval(logTimer);
       cancelAnimationFrame(raf);
       bar.style.width = "100%";
+      setTimeout(pararChuva, 700);
       setTimeout(() => {
         $("#loader").classList.add("is-done");
         document.body.classList.remove("is-loading");
@@ -216,26 +276,29 @@
         quantidade: Math.max(0, parseInt(p.quantidade, 10) || 0),
         condicao: (p.condicao || "novo").toLowerCase(),
       }));
-      state.kits = (data.kits || [])
-        .map((k) => ({ ...k, desconto: Number(k.desconto) || 0, itens: (k.itens || []).filter((c) => getProduto(c.item)) }))
-        .filter((k) => k.id && k.itens.length);
+      state.kits = []; // área de kits removida do site
 
       sanitizeCart();
       applyLoja();
       setupPriceFilter();
       renderCategorias();
       renderCondicoes();
-      renderKits();
       renderProdutos();
       renderComoFunciona(data.comoFunciona || []);
-      renderFaq(data.faq || []);
       renderCart();
       loader.onDone(() => routeFromHash(true));
     } catch (err) {
       console.error(err);
+      const arquivo = location.protocol === "file:";
+      const rede = err instanceof TypeError && /fetch/i.test(err.message);
+      const json = err instanceof SyntaxError;
       $("#productGrid").innerHTML = `<div class="empty" style="grid-column:1/-1">
         <p><strong>Não foi possível carregar o catálogo.</strong></p>
-        <p>Se você abriu o arquivo direto (file://), rode um servidor local — ex.: extensão <em>Live Server</em> do VS Code ou <code>python -m http.server</code>.</p>
+        <p>${arquivo || rede
+          ? "Se você abriu o arquivo direto (file://), rode um servidor local — ex.: extensão <em>Live Server</em> do VS Code ou <code>python -m http.server</code>."
+          : json
+            ? "O arquivo <code>data/produtos.json</code> tem um erro de sintaxe. Abra <a href=\"validar.html\">validar.html</a> para ver a linha."
+            : `Erro no site: <code>${esc(err.message)}</code>`}</p>
       </div>`;
     } finally {
       loader.ready();
@@ -244,22 +307,21 @@
 
   function applyLoja() {
     const l = state.loja;
-    if (l.slogan) $("#lojaSlogan").textContent = l.slogan;
-    if (l.cidade) $("#lojaCidade").textContent = l.cidade;
+    // cada elemento é opcional: se for removido do HTML, o site continua funcionando
+    const set = (sel, fn) => { const el = $(sel); if (el) fn(el); };
+    if (l.slogan) set("#lojaSlogan", (el) => (el.textContent = l.slogan));
+    if (l.cidade) set("#lojaCidade", (el) => (el.textContent = l.cidade));
     const vender = waLink(lojaWa(), l.mensagemVenderDoar || "Olá! Gostaria de vender/doar componentes.");
-    $("#venderDoar").href = vender;
-    $("#footerVender").href = vender;
-    $("#footerWhats").href = waLink(lojaWa(), `Olá! Vim pelo site ${nomeLoja()}.`);
-    if (l.instagram) {
-      const a = $("#footerInsta");
+    set("#venderDoar", (el) => (el.href = vender));
+    set("#footerVender", (el) => (el.href = vender));
+    set("#footerWhats", (el) => (el.href = waLink(lojaWa(), `Olá! Vim pelo site ${nomeLoja()}.`)));
+    if (l.instagram) set("#footerInsta", (a) => {
       a.href = l.instagram.startsWith("http") ? l.instagram : `https://instagram.com/${l.instagram.replace("@", "")}`;
       a.hidden = false;
-    }
+    });
     const pay = l.formasPagamento?.length ? l.formasPagamento : ["Pix", "Cartão", "Dinheiro"];
-    $("#paySelect").innerHTML = `<option value="">Selecione...</option>` + pay.map((f) => `<option>${esc(f)}</option>`).join("");
-    if (l.entrega) {
-      $("#checkoutDelivery").textContent = "🚚 " + l.entrega;
-    }
+    set("#paySelect", (el) => (el.innerHTML = `<option value="">Selecione...</option>` + pay.map((f) => `<option>${esc(f)}</option>`).join("")));
+    if (l.entrega) set("#checkoutDelivery", (el) => (el.textContent = "🚚 " + l.entrega));
   }
 
   // =========================================================
@@ -323,9 +385,7 @@
       .map((c) => `<button class="chip" role="tab" data-cat="${esc(c.id)}">${esc(c.nome)}<small>${count(c.id)}</small></button>`)
       .join("");
     const links = [];
-    if (state.kits.length) links.push(`<a href="#kits">Kits</a>`);
     links.push(...usadas.slice(0, 4).map((c) => `<button data-cat="${esc(c.id)}">${esc(c.nome)}</button>`));
-    links.push(`<a href="#como-funciona">Como funciona</a>`);
     $("#navLinks").innerHTML = links.join("");
     $("#footerCategorias").innerHTML = usadas.map((c) => `<li><button data-cat="${esc(c.id)}">${esc(c.nome)}</button></li>`).join("");
     syncCategoriaAtiva();
@@ -447,11 +507,15 @@
       return `<a class="btn btn--notify" href="${esc(avisoLink(p.nome, "#" + p.item))}" target="_blank" rel="noopener">🔔 Avise-me quando chegar</a>`;
     }
     const limite = livre <= 0;
+    // com só 1 unidade livre, o seletor de quantidade não faz sentido
+    if (livre === 1) {
+      return `<button class="btn btn--orange ${ctx === "card" ? "card__add" : ""}" data-act="add" data-item="${esc(p.item)}">Adicionar</button>`;
+    }
     return `
       <div class="qty" aria-label="Quantidade">
         <button data-act="dec" data-item="${esc(p.item)}" ${sel <= 1 || limite ? "disabled" : ""} aria-label="Diminuir">−</button>
         <span>${limite ? 0 : sel}</span>
-        <button data-act="inc" data-item="${esc(p.item)}" ${sel >= livre ? "disabled" : ""} aria-label="Aumentar">+</button>
+        <button data-act="inc" data-item="${esc(p.item)}" ${limite ? "disabled" : ""} ${sel >= livre ? 'aria-disabled="true"' : ""} aria-label="Aumentar">+</button>
       </div>
       <button class="btn btn--orange ${ctx === "card" ? "card__add" : ""}" data-act="add" data-item="${esc(p.item)}" ${limite ? "disabled" : ""}>
         ${limite ? "Tudo no carrinho" : "Adicionar"}
@@ -557,6 +621,7 @@
       </article>`;
   }
   function renderKits() {
+    if (!$("#kits")) return; // seção removida
     $("#kits").hidden = !state.kits.length;
     $("#kitGrid").innerHTML = state.kits.map(kitHTML).join("");
   }
@@ -571,7 +636,7 @@
     `<svg viewBox="0 0 24 24"><circle cx="5.5" cy="17.5" r="3"/><circle cx="18.5" cy="17.5" r="3"/><path d="M8.5 17.5h6l-3-8H8m7.5 0H18l2.5 8M14 6h3l1 3.5"/></svg>`,
   ];
   function renderComoFunciona(passos) {
-    if (!passos.length) return;
+    if (!passos.length || !$("#como-funciona")) return; // seção removida
     $("#como-funciona").hidden = false;
     $("#steps").innerHTML = passos.map((s, i) => `
       <li class="step">
@@ -585,6 +650,7 @@
     }
   }
   function renderFaq(faq) {
+    if (!$("#faq")) return; // seção removida
     if (!faq.length) return;
     $("#faq").hidden = false;
     $("#faqList").innerHTML = faq.map((q) => `
@@ -1084,77 +1150,77 @@
 
     // cabeçalho
     const g = c.createLinearGradient(0, 0, W, headH);
-    g.addColorStop(0, "#0f2556"); g.addColorStop(1, "#06122e");
+    g.addColorStop(0, "#202020"); g.addColorStop(1, "#0f0f0f");
     c.fillStyle = g; c.fillRect(0, 0, W, headH);
-    c.strokeStyle = "rgba(19,164,173,.16)"; c.lineWidth = 3;
+    c.strokeStyle = "rgba(93,214,44,.18)"; c.lineWidth = 3;
     c.beginPath(); c.moveTo(W - 330, 40); c.lineTo(W - 250, 40); c.lineTo(W - 220, 70); c.lineTo(W - 120, 70); c.stroke();
     c.beginPath(); c.moveTo(W - 300, 180); c.lineTo(W - 200, 180); c.lineTo(W - 170, 150); c.lineTo(W - 60, 150); c.stroke();
-    c.fillStyle = "#13a4ad"; c.fillRect(0, headH - 8, W, 8);
+    c.fillStyle = "#5dd62c"; c.fillRect(0, headH - 8, W, 8);
     c.textBaseline = "alphabetic";
     c.font = `700 58px ${F.d}`; c.fillStyle = "#ffffff";
     c.fillText("Comunidade", P, 100);
     const wBrand = c.measureText("Comunidade").width;
-    c.fillStyle = "#ff7a1a"; c.fillText(".com", P + wBrand, 100);
-    c.font = `400 22px ${F.t}`; c.fillStyle = "#9fb0d6";
+    c.fillStyle = "#5dd62c"; c.fillText(".com", P + wBrand, 100);
+    c.font = `400 22px ${F.t}`; c.fillStyle = "#a6a6a6";
     c.fillText((state.loja.slogan || "") + (state.loja.cidade ? " · " + state.loja.cidade : ""), P, 138);
     c.textAlign = "right";
-    c.font = `700 34px ${F.d}`; c.fillStyle = "#2cc3cc"; c.fillText("ORÇAMENTO", W - P, 92);
-    c.font = `400 21px ${F.t}`; c.fillStyle = "#e8eefc";
+    c.font = `700 34px ${F.d}`; c.fillStyle = "#5dd62c"; c.fillText("ORÇAMENTO", W - P, 92);
+    c.font = `400 21px ${F.t}`; c.fillStyle = "#f8f8f8";
     c.fillText(`Nº ${cod}`, W - P, 128); c.fillText(dataHora(), W - P, 158);
     c.textAlign = "left";
 
     let y = headH + 40;
     if (nome) {
-      c.font = `400 24px ${F.t}`; c.fillStyle = "#52617f"; c.fillText("Para:", P, y + 10);
-      c.font = `600 24px ${F.t}`; c.fillStyle = "#0b1a3a"; c.fillText(nome, P + 70, y + 10);
+      c.font = `400 24px ${F.t}`; c.fillStyle = "#555555"; c.fillText("Para:", P, y + 10);
+      c.font = `600 24px ${F.t}`; c.fillStyle = "#0f0f0f"; c.fillText(nome, P + 70, y + 10);
       y += 44;
     }
     // cabeçalho da tabela
-    c.fillStyle = "#0a1a3f"; c.fillRect(P, y, W - P * 2, 44);
+    c.fillStyle = "#0f0f0f"; c.fillRect(P, y, W - P * 2, 44);
     c.font = `600 19px ${F.t}`; c.fillStyle = "#ffffff";
     c.fillText("ITEM", P + 16, y + 29);
     c.textAlign = "right"; c.fillText("SUBTOTAL", W - P - 16, y + 29); c.textAlign = "left";
     y += 50;
 
     rows.forEach((row, i) => {
-      if (i % 2) { c.fillStyle = "#f3f6fb"; c.fillRect(P, y - 4, W - P * 2, row.h); }
+      if (i % 2) { c.fillStyle = "#f4f4f4"; c.fillRect(P, y - 4, W - P * 2, row.h); }
       let yy = y + 26;
-      c.font = `600 26px ${F.t}`; c.fillStyle = "#0b1a3a";
+      c.font = `600 26px ${F.t}`; c.fillStyle = "#0f0f0f";
       row.titulo.forEach((l) => { c.fillText(l, P + 16, yy); yy += 34; });
-      c.font = `400 20px ${F.t}`; c.fillStyle = "#52617f";
+      c.font = `400 20px ${F.t}`; c.fillStyle = "#555555";
       row.detalhe.forEach((l) => { c.fillText(l, P + 16, yy - 6); yy += 27; });
-      c.textAlign = "right"; c.font = `700 28px ${F.d}`; c.fillStyle = "#0b1a3a";
+      c.textAlign = "right"; c.font = `700 28px ${F.d}`; c.fillStyle = "#0f0f0f";
       c.fillText(brl(row.e.sub), W - P - 16, y + 28); c.textAlign = "left";
       y += row.h;
-      c.strokeStyle = "#dde3ef"; c.lineWidth = 1;
+      c.strokeStyle = "#e3e3e3"; c.lineWidth = 1;
       c.beginPath(); c.moveTo(P, y - 4); c.lineTo(W - P, y - 4); c.stroke();
     });
 
     // totais
     y += 36;
-    const linhaTotal = (rotulo, valor, cor = "#52617f", font = `400 24px ${F.t}`) => {
+    const linhaTotal = (rotulo, valor, cor = "#555555", font = `400 24px ${F.t}`) => {
       c.font = font; c.fillStyle = cor;
       c.fillText(rotulo, W - P - 420, y); c.textAlign = "right"; c.fillText(valor, W - P, y); c.textAlign = "left";
       y += 40;
     };
     linhaTotal("Subtotal", brl(r.subtotal));
-    if (r.cup.desconto) linhaTotal(`Cupom ${r.cup.cupom.codigo}`, "− " + brl(r.cup.desconto), "#15803d");
-    c.fillStyle = "#0a1a3f"; c.fillRect(W - P - 420, y - 26, 420, 3);
+    if (r.cup.desconto) linhaTotal(`Cupom ${r.cup.cupom.codigo}`, "− " + brl(r.cup.desconto), "#337418");
+    c.fillStyle = "#0f0f0f"; c.fillRect(W - P - 420, y - 26, 420, 3);
     y += 16;
-    linhaTotal("TOTAL", brl(r.total), "#0b1a3a", `700 36px ${F.d}`);
+    linhaTotal("TOTAL", brl(r.total), "#0f0f0f", `700 36px ${F.d}`);
 
     // nota do frete
     y += 4;
     const notaH = nota.length * 30 + 26;
-    c.fillStyle = "#fff4ec"; c.fillRect(P, y, W - P * 2, notaH);
-    c.fillStyle = "#ff7a1a"; c.fillRect(P, y, 6, notaH);
-    c.font = `400 21px ${F.t}`; c.fillStyle = "#0b1a3a";
+    c.fillStyle = "#eff9ea"; c.fillRect(P, y, W - P * 2, notaH);
+    c.fillStyle = "#337418"; c.fillRect(P, y, 6, notaH);
+    c.font = `400 21px ${F.t}`; c.fillStyle = "#0f0f0f";
     nota.forEach((l, i) => c.fillText(l, P + 24, y + 34 + i * 30));
     y += notaH + 40;
 
     // rodapé
     const dias = state.loja.orcamentoValidadeDias;
-    c.font = `400 19px ${F.t}`; c.fillStyle = "#52617f";
+    c.font = `400 19px ${F.t}`; c.fillStyle = "#555555";
     c.fillText(dias ? `Válido por ${dias} dias, sujeito ao estoque.` : "Sujeito à disponibilidade de estoque.", P, y);
     const tel = maskPhone(onlyDigits(state.loja.whatsapp).replace(/^55/, ""));
     c.fillText(`WhatsApp ${tel} · ${siteUrl().replace(/^https?:\/\//, "")}`, P, y + 30);
@@ -1442,13 +1508,17 @@
       if (!p) return;
       const atual = state.selecao[item] || 1;
       if (btn.dataset.act === "add") return addToCart(item, atual);
-      if (btn.dataset.act === "inc") state.selecao[item] = Math.min(atual + 1, disponivel(p));
+      if (btn.dataset.act === "inc") {
+        const livre = disponivel(p);
+        if (atual >= livre) return toast(`Só ${livre === 1 ? "temos 1 unidade disponível" : `temos ${livre} unidades disponíveis`}${reservado(p.item) ? " além das que já estão no carrinho" : ""}.`, true);
+        state.selecao[item] = atual + 1;
+      }
       if (btn.dataset.act === "dec") state.selecao[item] = Math.max(1, atual - 1);
       refreshItem(item);
     });
 
     // kits
-    $("#kitGrid").addEventListener("click", (e) => {
+    $("#kitGrid")?.addEventListener("click", (e) => {
       const add = e.target.closest("[data-kit-add]");
       if (add) return addKit(add.dataset.kitAdd);
       const share = e.target.closest("[data-kit-share]");
