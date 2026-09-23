@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Painel — Comunidade.com</title>
+  <script>try{var t=localStorage.getItem("comunidade-theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="icon" href="img/icons/favicon-32.png" sizes="32x32" type="image/png" />
+  <meta name="theme-color" content="#0f0f0f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="adm">
+
+  <!-- ================= LOGIN ================= -->
+  <main class="login" id="viewLogin">
+    <form class="login__card" id="loginForm" autocomplete="on">
+      <img src="img/icons/icon-192.png" alt="" class="login__icon" width="72" height="72" />
+      <h1>Painel da loja</h1>
+      <p class="muted">Comunidade<span class="lime">.com</span> · gerenciamento de produtos</p>
+      <label class="field">
+        <span>Senha</span>
+        <input type="password" id="loginSenha" autocomplete="current-password" required autofocus />
+      </label>
+      <p class="login__erro" id="loginErro" role="alert" hidden></p>
+      <button class="btn btn--orange btn--block" type="submit" id="loginBtn">Entrar</button>
+      <a class="link-btn" href="./">← voltar para a loja</a>
+    </form>
+  </main>
+
+  <!-- ================= PAINEL ================= -->
+  <div class="app" id="viewApp" hidden>
+    <header class="topo">
+      <div class="container topo__in">
+        <a class="topo__logo" href="./" target="_blank" rel="noopener" title="Abrir a loja">
+          <img src="img/icons/icon-192.png" alt="" width="36" height="36" />
+          <span><strong>Comunidade<span class="lime">.com</span></strong><small>Painel</small></span>
+        </a>
+        <div class="topo__status" id="status" aria-live="polite"></div>
+        <div class="topo__acoes">
+          <button class="btn btn--ghost btn--sm" id="btnDescartar" hidden>Descartar</button>
+          <button class="btn btn--orange btn--sm" id="btnPublicar" disabled>
+            <svg viewBox="0 0 24 24"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>
+            Publicar <span id="pubCount"></span>
+          </button>
+          <button class="icon-btn" id="btnSair" title="Sair" aria-label="Sair">
+            <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+          </button>
+        </div>
+      </div>
+      <nav class="container abas" role="tablist">
+        <button role="tab" data-aba="produtos" class="active">Produtos <small id="cntProdutos"></small></button>
+        <button role="tab" data-aba="categorias">Categorias</button>
+        <button role="tab" data-aba="cupons">Cupons</button>
+        <button role="tab" data-aba="loja">Loja</button>
+      </nav>
+    </header>
+
+    <main class="container conteudo">
+      <div class="aviso" id="aviso" hidden></div>
+
+      <!-- PRODUTOS -->
+      <section data-painel="produtos">
+        <div class="barra">
+          <input type="search" id="busca" placeholder="Buscar por nome ou número..." aria-label="Buscar produto" />
+          <select id="filtroCat" aria-label="Filtrar por categoria"></select>
+          <select id="filtroEst" aria-label="Filtrar por estoque">
+            <option value="">Todo estoque</option>
+            <option value="baixo">Estoque baixo (≤ 3)</option>
+            <option value="zero">Esgotados</option>
+          </select>
+          <button class="btn btn--orange" id="btnNovo">
+            <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Novo produto
+          </button>
+        </div>
+        <p class="dica">Preço e estoque podem ser alterados direto na lista. Nada vai para o site até você clicar em <b>Publicar</b>.</p>
+        <div class="lista" id="lista"></div>
+      </section>
+
+      <!-- CATEGORIAS -->
+      <section data-painel="categorias" hidden>
+        <div class="barra"><h2>Categorias</h2><button class="btn btn--orange btn--sm" id="btnNovaCat">+ Nova categoria</button></div>
+        <p class="dica">O <b>código</b> é usado internamente (sem acento e sem espaço). O <b>nome</b> é o que aparece na loja.</p>
+        <div class="tabela" id="tabCategorias"></div>
+      </section>
+
+      <!-- CUPONS -->
+      <section data-painel="cupons" hidden>
+        <div class="barra"><h2>Cupons de desconto</h2><button class="btn btn--orange btn--sm" id="btnNovoCupom">+ Novo cupom</button></div>
+        <p class="dica">Tipo <b>%</b> dá desconto em porcentagem; <b>R$</b> desconta um valor fixo. Mínimo e validade são opcionais.</p>
+        <div class="tabela" id="tabCupons"></div>
+      </section>
+
+      <!-- LOJA -->
+      <section data-painel="loja" hidden>
+        <div class="barra"><h2>Dados da loja</h2></div>
+        <form class="form-loja" id="formLoja" autocomplete="off">
+          <label class="field"><span>Nome da loja</span><input name="nome" /></label>
+          <label class="field"><span>Slogan</span><input name="slogan" /></label>
+          <label class="field"><span>WhatsApp que recebe os pedidos</span><input name="whatsapp" inputmode="numeric" placeholder="5592991234567" /><small>55 + DDD + número, só dígitos</small></label>
+          <label class="field"><span>Cidade</span><input name="cidade" /></label>
+          <label class="field"><span>Instagram (opcional)</span><input name="instagram" placeholder="@perfil" /></label>
+          <label class="field"><span>Validade do orçamento (dias)</span><input name="orcamentoValidadeDias" type="number" min="0" step="1" /></label>
+          <label class="field field--full"><span>Formas de pagamento (separadas por vírgula)</span><input name="formasPagamento" /></label>
+          <label class="field field--full"><span>Texto sobre a entrega</span><textarea name="entrega" rows="2"></textarea></label>
+          <label class="field field--full"><span>Mensagem do botão Vender/Doar</span><textarea name="mensagemVenderDoar" rows="2"></textarea></label>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <!-- ================= MODAL: PRODUTO ================= -->
+  <dialog class="modal modal--wide" id="dlgProduto">
+    <form class="modal__box pform" id="formProduto" method="dialog" novalidate>
+      <header class="modal__head">
+        <h3 id="pformTitulo">Novo produto</h3>
+        <button type="button" class="icon-btn" data-close aria-label="Fechar">✕</button>
+      </header>
+
+      <div class="pform__grid">
+        <div class="pform__col">
+          <div class="pform__row">
+            <label class="field field--xs"><span>Nº do item *</span><input name="item" required inputmode="numeric" /></label>
+            <label class="field"><span>Nome *</span><input name="nome" required maxlength="120" /></label>
+          </div>
+          <div class="pform__row">
+            <label class="field"><span>Categoria *</span><select name="categoria" required></select></label>
+            <label class="field"><span>Condição</span>
+              <select name="condicao"><option value="novo">Novo</option><option value="usado">Usado</option><option value="usado testado">Usado testado</option></select>
+            </label>
+          </div>
+          <div class="pform__row">
+            <label class="field"><span>Preço (R$) *</span><input name="preco" required inputmode="decimal" placeholder="49,90" /></label>
+            <label class="field"><span>Quantidade em estoque *</span><input name="quantidade" required type="number" min="0" step="1" /></label>
+          </div>
+          <label class="field"><span>Descrição curta (aparece no card)</span><textarea name="descricao" rows="2" maxlength="220"></textarea></label>
+          <label class="field"><span>Descrição completa (opcional, aparece ao abrir o produto)</span><textarea name="descricaoLonga" rows="3"></textarea></label>
+
+          <div class="bloco">
+            <div class="bloco__head"><strong>Especificações</strong><button type="button" class="link-btn" id="btnAddSpec">+ adicionar</button></div>
+            <div id="specs" class="specs-edit"></div>
+          </div>
+        </div>
+
+        <div class="pform__col">
+          <div class="bloco">
+            <div class="bloco__head">
+              <strong>Fotos</strong>
+              <span class="muted small">a 1ª aparece no card</span>
+            </div>
+            <div id="fotos" class="fotos"></div>
+            <div class="fotos__acoes">
+              <label class="btn btn--ghost btn--sm" for="fotoArquivo">
+                <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 20h16"/></svg> Enviar foto
+              </label>
+              <input type="file" id="fotoArquivo" accept="image/*" multiple hidden />
+              <button type="button" class="btn btn--ghost btn--sm" id="btnAddLink">
+                <svg viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg> Colar link
+              </button>
+            </div>
+            <p class="muted small" id="fotosLegado" hidden></p>
+          </div>
+        </div>
+      </div>
+
+      <p class="form-erro" id="pformErro" role="alert" hidden></p>
+      <footer class="pform__foot">
+        <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn btn--orange">Guardar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ================= MODAL: CONFIRMAR ================= -->
+  <dialog class="modal" id="dlgConfirma">
+    <form class="modal__box" method="dialog">
+      <h3 id="confTitulo">Confirmar</h3>
+      <p id="confTexto" class="muted"></p>
+      <footer class="pform__foot">
+        <button value="nao" class="btn btn--ghost">Cancelar</button>
+        <button value="sim" class="btn btn--danger" id="confBtn">Confirmar</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -6,7 +6,7 @@
    Ao mudar arquivos do site NÃO é preciso mexer aqui. Só aumente a
    VERSAO se quiser forçar a limpeza do cache de todos os visitantes.
    ========================================================= */
-const VERSAO = "v5";
+const VERSAO = "v6";
 const CACHE = `comunidade-${VERSAO}`;
 const ESSENCIAIS = [
   "./",
@@ -41,6 +41,8 @@ self.addEventListener("fetch", (e) => {
   const mesmaOrigem = url.origin === self.location.origin;
   const fonte = /fonts\.(googleapis|gstatic)\.com$/.test(url.hostname);
   if (!mesmaOrigem && !fonte) return; // WhatsApp etc.: não mexe
+  // painel e API nunca passam pelo cache (dados sempre atuais e privados)
+  if (mesmaOrigem && (url.pathname.startsWith("/api/") || /^\/admin(\.html)?$/.test(url.pathname) || url.pathname.includes("/js/admin") || url.pathname.includes("/css/admin"))) return;
 
   const ehImagem = req.destination === "image" || fonte;
   e.respondWith(ehImagem ? cacheDepoisRede(e, req) : redeDepoisCache(req));

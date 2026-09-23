@@ -118,3 +118,40 @@ O site busca sempre a versão mais nova do JSON; a cópia salva só é usada sem
 1. Crie um repositório e envie todos os arquivos.
 2. Settings → Pages → Source: *Deploy from a branch* → `main` / `root`.
 3. Para atualizar produtos, edite `data/produtos.json` no GitHub, confira em `/validar.html` e pronto.
+
+## Painel de gerenciamento (/admin)
+
+O dono da loja cadastra, edita e exclui produtos em `https://seusite/admin`, sem mexer em código.
+
+**Como funciona:** o painel envia o catálogo para a API (`api/`, funções serverless da Vercel), que faz um *commit* do `data/produtos.json` no GitHub. A Vercel percebe o commit e publica o site em ~1 minuto. Fotos enviadas pelo painel vão para `img/produtos/`.
+
+| Arquivo | Função |
+|---|---|
+| `admin.html`, `js/admin.js`, `css/admin.css` | tela do painel |
+| `api/login.js` | confere a senha e devolve um token de sessão (8 h) |
+| `api/produtos.js` | lê (GET) e publica (PUT) o catálogo |
+| `api/upload.js` | envia fotos para `img/produtos/` |
+| `api/_lib.js` | funções compartilhadas (GitHub, login, validação) |
+| `vercel.json` | endereço `/admin`, cache e cabeçalhos |
+| `tools/dev-server.js` | servidor para testar tudo no computador |
+
+### Variáveis de ambiente (Vercel → Settings → Environment Variables)
+
+| Nome | Valor |
+|---|---|
+| `ADMIN_SENHA` | senha do painel |
+| `GITHUB_TOKEN` | token *fine-grained* do GitHub, só deste repositório, permissão **Contents: Read and write** |
+| `GITHUB_REPO` | `dono/repositorio` (ex.: `araujogabr/comunidade`) |
+| `GITHUB_BRANCH` | branch publicada (padrão `main`) |
+| `SESSION_SECRET` | texto aleatório longo (opcional, recomendado) |
+
+Depois de criar ou alterar variáveis, faça um **Redeploy** na Vercel.
+
+### Testar no computador
+
+```
+node tools/dev-server.js
+```
+
+Abra http://localhost:3000/admin (senha `admin`). Nesse modo local o painel grava no `data/produtos.json` da própria pasta — nada vai para o GitHub.
+Para testar contra o GitHub de verdade, crie um `.env.local` com as mesmas variáveis (ele está no `.gitignore`).
